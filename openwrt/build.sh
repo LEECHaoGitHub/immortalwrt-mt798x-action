@@ -272,6 +272,7 @@ scripts=(
   00-prepare_base.sh
   01-prepare_package.sh
   02-convert_translation.sh
+  05-add-missing-devices.sh
   10-custom.sh
 )
 for script in "${scripts[@]}"; do
@@ -281,6 +282,7 @@ chmod 0755 *sh
 [ "$(whoami)" = "runner" ] && group "patching openwrt"
 bash 00-prepare_base.sh
 bash 01-prepare_package.sh
+bash 05-add-missing-devices.sh
 bash 10-custom.sh
 find feeds -type f -name "*.orig" -exec rm -f {} \;
 [ "$(whoami)" = "runner" ] && endgroup
