@@ -1,5 +1,6 @@
 CONFIG_TARGET_mediatek=y
 CONFIG_TARGET_mediatek_filogic=y
 CONFIG_TARGET_MULTI_PROFILE=y
-CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_cmcc_rax3000m-emmc=y
-CONFIG_TARGET_DEVICE_PACKAGES_mediatek_filogic_DEVICE_cmcc_rax3000m-emmc=""
+# 上游 openwrt-24.10-6.6 已无 cmcc_rax3000m-emmc（U-Boot 布局），只剩 -mtk 变体
+CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_cmcc_rax3000m-emmc-mtk=y
+CONFIG_TARGET_DEVICE_PACKAGES_mediatek_filogic_DEVICE_cmcc_rax3000m-emmc-mtk=""
