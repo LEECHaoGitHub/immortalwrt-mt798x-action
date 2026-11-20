@@ -71,6 +71,7 @@ CONFIG_PACKAGE_libuci-lua=y
 CONFIG_PACKAGE_curl=y
 CONFIG_PACKAGE_tar=y
 CONFIG_PACKAGE_mount-utils=y
+CONFIG_PACKAGE_xz-utils=y
 CONFIG_PACKAGE_dropbear=y
 EOF
 
