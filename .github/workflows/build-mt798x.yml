@@ -137,6 +137,10 @@ jobs:
           echo "---- 中文/商店 ----"
           grep -q '^CONFIG_LUCI_LANG_zh_Hans=y$' .config || { echo "::error::中文语言包未开启"; exit 1; }
           grep -q '^CONFIG_PACKAGE_luci-i18n-base-zh-cn=y$' .config || { echo "::error::LuCI 基础中文包未生效"; exit 1; }
+          echo "---- store 诊断 ----"
+          grep -n 'luci-app-store' .config | head -5 || true
+          grep -A14 'config PACKAGE_luci-app-store' tmp/.config-package.in | head -22 || true
+          grep -n 'PACKAGE_luci-lib-taskd\|PACKAGE_taskd\|PACKAGE_libuci-lua' .config | head -5 || true
           grep -q '^CONFIG_PACKAGE_luci-app-store=y$' .config || { echo "::error::iStore 市场未生效"; exit 1; }
           # iStore 的商店前端自带 zh-cn 词条（随 luci-app-store 安装，不是单独的 luci-i18n-store-* 包）
           test -f package/feeds/istore/luci-app-store/src/po/zh-cn/iStore.po || {
