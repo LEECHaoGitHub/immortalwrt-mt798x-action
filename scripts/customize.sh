@@ -64,6 +64,13 @@ CONFIG_PACKAGE_luci-theme-vantage=y
 CONFIG_LUCI_LANG_zh_Hans=y
 CONFIG_PACKAGE_luci-i18n-base-zh-cn=y
 CONFIG_PACKAGE_luci-app-store=y
+CONFIG_PACKAGE_luci-lib-taskd=y
+CONFIG_PACKAGE_luci-lib-xterm=y
+CONFIG_PACKAGE_taskd=y
+CONFIG_PACKAGE_libuci-lua=y
+CONFIG_PACKAGE_curl=y
+CONFIG_PACKAGE_tar=y
+CONFIG_PACKAGE_mount-utils=y
 CONFIG_PACKAGE_dropbear=y
 EOF
 
