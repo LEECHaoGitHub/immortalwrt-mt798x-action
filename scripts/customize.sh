@@ -77,6 +77,27 @@ for p in luci-app-quickstart quickstart; do
   [ -f "package/$p/Makefile" ] || { echo "::error::quickstart 包缺失: $p"; exit 1; }
 done
 echo "✔ 首页仪表盘（luci-app-quickstart + quickstart）已 vendor 到 package/"
+
+# 让仪表盘成为「登录后的默认首页」：
+# ucode dispatcher 访问 / 时走 firstchild，只会在「有 title」的子节点里挑 order 最小的一个；
+# quickstart 原 entry 没有 title，所以永远不会被选中（登录还是落在 状态-概览）。
+sed -i 's|entry({"admin", "quickstart"}, template("quickstart/home")).leaf = true|entry({"admin", "quickstart"}, template("quickstart/home"), _("Home"), 1).leaf = true|' \
+  package/luci-app-quickstart/luasrc/controller/quickstart.lua
+grep -q 'template("quickstart/home"), _("Home"), 1' package/luci-app-quickstart/luasrc/controller/quickstart.lua \
+  || { echo "::error::未能给 quickstart 菜单项补上 title/order，仪表盘不会成为默认首页"; exit 1; }
+
+# quickstart 自带的 uci-defaults 只在 PKG_UPGRADE=1（升级安装）时才 enable/start，
+# 全新刷机时守护进程不自启 → controller 里 pgrep quickstart 失败 → 直接重定向回 admin/status，
+# 仪表盘等于不存在。这里补一个 defaults 保证开机自启。
+mkdir -p package/luci-app-quickstart/root/etc/uci-defaults
+cat > package/luci-app-quickstart/root/etc/uci-defaults/60-quickstart-enable <<'EOF'
+#!/bin/sh
+/etc/init.d/quickstart enable
+/etc/init.d/quickstart start
+exit 0
+EOF
+chmod 755 package/luci-app-quickstart/root/etc/uci-defaults/60-quickstart-enable
+echo "✔ 仪表盘已设为默认首页，quickstart 守护进程开机自启"
 echo "== 7/8 写入配置 =="
 cat >> .config <<'EOF'
 CONFIG_PACKAGE_luci-theme-vantage=y
@@ -89,6 +110,9 @@ CONFIG_PACKAGE_taskd=y
 CONFIG_PACKAGE_libuci-lua=y
 CONFIG_PACKAGE_luci-app-quickstart=y
 CONFIG_PACKAGE_quickstart=y
+# quickstart 的 LuCI 端是 Lua 应用，必须有 lua 运行时与 compat 层
+CONFIG_PACKAGE_luci-lua-runtime=y
+CONFIG_PACKAGE_luci-compat=y
 CONFIG_PACKAGE_luci-app-ttyd=y
 CONFIG_PACKAGE_luci-i18n-ttyd-zh-cn=y
 CONFIG_PACKAGE_curl=y
@@ -114,3 +138,4 @@ exit 0
 EOT
 chmod +x files/etc/uci-defaults/99-default-theme
 echo "[done] customize"
+
