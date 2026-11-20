@@ -145,6 +145,9 @@ jobs:
           # iStore 的商店前端自带 zh-cn 词条（随 luci-app-store 安装，不是单独的 luci-i18n-store-* 包）
           test -f package/feeds/istore/luci-app-store/src/po/zh-cn/iStore.po || {
             echo "::error::iStore 中文词条缺失"; exit 1; }
+          echo "---- 首页仪表盘 ----"
+          grep -q '^CONFIG_PACKAGE_luci-app-quickstart=y$' .config || { echo "::error::首页仪表盘 luci-app-quickstart 未生效"; exit 1; }
+          grep -q '^CONFIG_PACKAGE_quickstart=y$' .config || { echo "::error::quickstart 守护进程未生效"; exit 1; }
           echo "---- SSH ----"
           grep -q '^CONFIG_PACKAGE_dropbear=y$' .config || { echo "::error::固件未内置 dropbear，SSH 不可用"; exit 1; }
 
@@ -205,6 +208,7 @@ jobs:
             - 定时：每天 09:00（北京时间）
             - 主题：luci-theme-vantage（唯一预装主题，侧栏默认展开显示图标与名称）
             - 内置：iStore 软件中心 + 简体中文语言包
+            - 首页：iStoreOS 风格仪表盘（luci-app-quickstart）
             - SSH：默认内置 dropbear
             - 运行记录：${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           files: out/*
