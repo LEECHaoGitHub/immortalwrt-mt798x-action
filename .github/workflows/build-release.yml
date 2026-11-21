@@ -81,6 +81,11 @@ jobs:
         git config --global user.name 'actions'
         git config --global user.email 'action@github.com'
         echo build_dir="/builder" >> "$GITHUB_ENV"
+        # 不要再用源码树的分支名当 Release tag：build.sh 拉的是 openwrt-24.10-6.6 分支，
+        # 于是所有机型、所有天的固件都被塞进同一个 2025-12 创建的 tag 里滚动覆盖，
+        # Releases 页面看不到“新 Release”，历史也被覆盖掉。
+        # 改成 immortalwrt-<设备/机型组>-<北京日期>：每次构建一个独立 Release，同一天重跑只更新当天。
+        echo "release_tag=immortalwrt-${{ github.event.inputs.device }}-$(TZ=Asia/Shanghai date +%Y-%m-%d)" >> "$GITHUB_ENV"
 
     - name: Show system
       run: |
@@ -137,8 +142,7 @@ jobs:
         [ -n ${{ github.event.inputs.root_password }} ] && export ROOT_PASSWORD="${{ github.event.inputs.root_password }}"
         bash <(curl -sS http://127.0.0.1:8080/build.sh) ${{ github.event.inputs.device }}
         cd openwrt
-        tags=$(git branch --show-current)
-        echo "latest_release=$tags" >>$GITHUB_ENV
+        echo "上游源码分支：$(git branch --show-current)"
 
     - name: Extensive logs after a failed compilation
       working-directory: /builder
@@ -168,17 +172,18 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ github.event.inputs.device }}-openwrt-${{ env.latest_release }}
+        name: ${{ env.release_tag }}
         path: ${{ env.build_dir }}/rom/*
 
     - name: Create release
-      continue-on-error: true
+      # 这里不要 continue-on-error：release 失败要能看到红，否则又是“编译成功但没发 Release”
       uses: ncipollo/release-action@v1
       with:
-        name: ${{ env.latest_release }}
+        name: ImmortalWrt ${{ github.event.inputs.device }} · ${{ env.release_tag }}
         allowUpdates: true
-        tag: ${{ env.latest_release }}
-        commit: main
+        tag: ${{ env.release_tag }}
+        commit: ${{ github.sha }}
         replacesArtifacts: true
         token: ${{ secrets.GITHUB_TOKEN }}
         artifacts: ${{ env.build_dir }}/rom/*
+
