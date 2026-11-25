@@ -86,15 +86,23 @@ echo "✔ 首页仪表盘（luci-app-quickstart + quickstart）已 vendor 到 pa
 #   ERROR: info field 'version' has invalid value: package version is invalid
 #   （run 45574834289，luci.mk:398 打包失败）
 # 这里把 PKG_VERSION 压成纯数字段，由 PKG_RELEASE 作为唯一 -rN。
-for mk in package/luci-app-quickstart/Makefile package/quickstart/Makefile; do
-  [ -f "$mk" ] || continue
+#
+# 注意：**只处理 luci-app-quickstart**。quickstart（守护进程）是二进制包，
+# 它的 PKG_SOURCE:=$(PKG_NAME)-binary-$(PKG_VERSION).tar.gz 是即时展开，
+# 一旦改 PKG_VERSION，下载文件名会变成 quickstart-binary-0.17.1.tar.gz → 404
+# （run 45589545960 实测）。它的版本里没有第二个 -rN，无需处理。
+mk=package/luci-app-quickstart/Makefile
+if [ -f "$mk" ]; then
   base=$(sed -n 's/^PKG_VERSION:=\([0-9][0-9.]*\).*/\1/p' "$mk" | head -1)
   if [ -n "$base" ]; then
     sed -i -E "s|^PKG_VERSION:=.*|PKG_VERSION:=$base|" "$mk"
     grep -q "^PKG_VERSION:=$base$" "$mk" || { echo "::error::$mk 版本号改写失败"; exit 1; }
     echo ">>> $mk PKG_VERSION 规整为 $base（apk 只接受单个 -rN）"
   fi
-done
+fi
+# quickstart 守护进程包保持上游版本，确保 PKG_SOURCE 文件名与下载地址一致
+grep -q '^PKG_VERSION:=.*-rc' package/quickstart/Makefile 2>/dev/null \
+  && echo ">>> quickstart 保持上游版本号（不改，避免下载文件名 404）" || true
 
 # 让仪表盘成为「登录后的默认首页」：
 # ucode dispatcher 访问 / 时走 firstchild，只会在「有 title」的子节点里挑 order 最小的一个；
