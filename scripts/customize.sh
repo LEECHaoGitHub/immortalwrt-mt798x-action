@@ -78,6 +78,24 @@ for p in luci-app-quickstart quickstart; do
 done
 echo "✔ 首页仪表盘（luci-app-quickstart + quickstart）已 vendor 到 package/"
 
+# apk 的版本号只允许末尾一个 -rN。kiddin9 的 luci-app-quickstart 里是
+#   PKG_VERSION:=0.17.1-rc20261028-r3
+#   PKG_RELEASE:=45
+#   ifeq ($(CONFIG_USE_APK),y) PKG_VERSION:=$(subst -rc,_rc,$(PKG_VERSION))
+# apk 下拼成 0.17.1_rc20261028-r3-r45 → apk mkpkg 直接报
+#   ERROR: info field 'version' has invalid value: package version is invalid
+#   （run 45574834289，luci.mk:398 打包失败）
+# 这里把 PKG_VERSION 压成纯数字段，由 PKG_RELEASE 作为唯一 -rN。
+for mk in package/luci-app-quickstart/Makefile package/quickstart/Makefile; do
+  [ -f "$mk" ] || continue
+  base=$(sed -n 's/^PKG_VERSION:=\([0-9][0-9.]*\).*/\1/p' "$mk" | head -1)
+  if [ -n "$base" ]; then
+    sed -i -E "s|^PKG_VERSION:=.*|PKG_VERSION:=$base|" "$mk"
+    grep -q "^PKG_VERSION:=$base$" "$mk" || { echo "::error::$mk 版本号改写失败"; exit 1; }
+    echo ">>> $mk PKG_VERSION 规整为 $base（apk 只接受单个 -rN）"
+  fi
+done
+
 # 让仪表盘成为「登录后的默认首页」：
 # ucode dispatcher 访问 / 时走 firstchild，只会在「有 title」的子节点里挑 order 最小的一个；
 # quickstart 原 entry 没有 title，所以永远不会被选中（登录还是落在 状态-概览）。
