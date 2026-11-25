@@ -715,6 +715,9 @@ jobs:
             fail="$(grep -o 'ERROR: [^ ]* failed to build' build.log | head -1 | awk '{print $2}')"
             echo "== 失败包: ${fail:-未识别}"
             if [ -n "$fail" ]; then
+              # 必须先 clean：.built 戳还在时 make 会跳过编译直奔 install，
+              # 真实编译错误被打掉，只留下一条下游 cp 报错（libbpf 就是这个现象）。
+              make "$fail/clean" >/dev/null 2>&1 || true
               make -j1 V=s "$fail/compile" 2>&1 | tail -150 || true
             else
               make -j1 V=s 2>&1 | tail -150 || true
